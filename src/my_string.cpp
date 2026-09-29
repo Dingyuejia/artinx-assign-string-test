@@ -22,6 +22,7 @@
 // ============================================================================
 
 #include "my_string.h"
+#include <stdexcept>
 namespace {
 
     std::size_t char_len(const char* s) {
@@ -78,8 +79,22 @@ void String::push_back(char ch) {
     ++size_;              // 长度 +1
     data_[size_] = '\0';  // 维护"以 '\0' 结尾"
 }
+std::size_t String::size() const noexcept { return size_; }
+std::size_t String::capacity() const noexcept { return capacity_; }
 
+char& String::operator[](std::size_t index) noexcept { return data_[index]; }
+const char& String::operator[](std::size_t index) const noexcept { return data_[index]; }
 
+char& String::at(std::size_t index) {
+    if (index >= size_) throw std::out_of_range("String::at: index out of range");
+    return data_[index];
+}
+const char& String::at(std::size_t index) const {
+    if (index >= size_) throw std::out_of_range("String::at: index out of range");
+    return data_[index];
+}
+const char* String::c_str() const noexcept { return data_; }
+String::operator const char*() const noexcept { return data_; }
 
 
 // TODO: 在此实现 include/my_string.h 中声明的所有成员函数与运算符。
