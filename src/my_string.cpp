@@ -95,6 +95,59 @@ const char& String::at(std::size_t index) const {
 }
 const char* String::c_str() const noexcept { return data_; }
 String::operator const char*() const noexcept { return data_; }
+// ---- M2：拷贝构造（深拷贝）----
+String::String(const String& other)
+    : data_(new char[other.size_ + 1]),
+      size_(other.size_),
+      capacity_(other.size_) {
+    copy_chars(data_, other.data_, size_ + 1);  // 连结尾 '\0' 一起拷
+}
+// ---- M2：复制赋值（自赋值安全 + 强异常安全）----
+String& String::operator=(const String& other) {
+    if (this == &other) {
+        return *this;                    // 自赋值 s = s，直接返回
+    }
+    char* new_data = new char[other.size_ + 1];  // 先分配新的
+    copy_chars(new_data, other.data_, other.size_ + 1);
+    delete[] data_;                      // 再释放旧的
+    data_ = new_data;
+    size_ = other.size_;
+    capacity_ = other.size_;
+    return *this;
+}
+// ---- M2：拼接（返回新对象，不修改操作数）----
+String String::operator+(const String& other) const {
+    String result;                        // 默认构造，容量 16
+    result.reserve(size_ + other.size_);  // 预留够大
+    copy_chars(result.data_, data_, size_);
+    copy_chars(result.data_ + size_, other.data_, other.size_);
+    result.size_ = size_ + other.size_;
+    result.data_[result.size_] = '\0';
+    return result;
+}
+// ---- M2：插入（越界抛异常 + 自插入安全）----
+void String::insert(std::size_t pos, const String& str) {
+    if (pos > size_) {
+        throw std::out_of_range("String::insert: index out of range");
+    }
+    if (this == &str) {                  // 自插入：先深拷贝一份
+        String copy(str);
+        insert(pos, copy);
+        return;
+    }
+    const std::size_t new_size = size_ + str.size_;
+    if (new_size > capacity_) {
+        reserve(new_size);
+    }
+    for (std::size_t i = size_; i > pos; --i) {   // 从后往前后移
+        data_[i - 1 + str.size_] = data_[i - 1];
+    }
+    for (std::size_t i = 0; i < str.size_; ++i) {
+        data_[pos + i] = str.data_[i];
+    }
+    size_ = new_size;
+    data_[size_] = '\0';                 // 重新封口
+}
 
 
 // TODO: 在此实现 include/my_string.h 中声明的所有成员函数与运算符。
