@@ -174,6 +174,22 @@ String& String::operator=(String&& other) noexcept {
     other.capacity_ = 0;
     return *this;
 }
+void String::swap(String& other) noexcept {
+    // ① 交换缓冲区指针
+    char* tmp_d = data_;
+    data_ = other.data_;
+    other.data_ = tmp_d;
+
+    // ② 交换 size
+    std::size_t tmp_s = size_;
+    size_ = other.size_;
+    other.size_ = tmp_s;
+
+    // ③ 交换 capacity
+    std::size_t tmp_c = capacity_;
+    capacity_ = other.capacity_;
+    other.capacity_ = tmp_c;
+}
 
 
 // TODO: 在此实现 include/my_string.h 中声明的所有成员函数与运算符。
