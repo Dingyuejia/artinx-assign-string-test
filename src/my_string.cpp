@@ -23,6 +23,8 @@
 
 #include "my_string.h"
 #include <stdexcept>
+#include <cctype>
+#include <iostream>
 namespace {
 
     std::size_t char_len(const char* s) {
@@ -189,6 +191,39 @@ void String::swap(String& other) noexcept {
     std::size_t tmp_c = capacity_;
     capacity_ = other.capacity_;
     other.capacity_ = tmp_c;
+}
+std::ostream& operator<<(std::ostream& os, const String& str) {
+    os << str.data_;   // 友元可以直接碰 data_；它恒有 '\0' 结尾
+    return os;
+}
+std::istream& operator>>(std::istream& is, String& str) {
+    // ① 跳过前导空白（空格 / tab / 换行）
+    char c;
+    while (is.get(c)) {
+        if (!std::isspace(static_cast<unsigned char>(c))) {
+            break;   // 读到第一个非空白字符
+        }
+    }
+
+    // ② 关键决策 1：一个字符都没读到（EOF）→ 设 failbit，str 保持原值！
+    if (!is) {
+        is.setstate(std::ios::failbit);
+        return is;
+    }
+
+    // ③ 关键决策 2：读到了第一个字符，现在才允许动 str（替换旧内容）
+    str = String();      // 清空（复用 M3 的移动赋值，临时对象是右值）
+    str.push_back(c);    // 第一个字符（容量不够会自动翻倍，M1 写的）
+
+    // ④ 继续读到空白或 EOF 为止
+    while (is.get(c)) {
+        if (std::isspace(static_cast<unsigned char>(c))) {
+            is.unget();   // 关键决策 3：空白放回流，留给下一次 >>
+            break;
+        }
+        str.push_back(c);
+    }
+    return is;
 }
 
 
