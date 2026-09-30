@@ -148,6 +148,32 @@ void String::insert(std::size_t pos, const String& str) {
     size_ = new_size;
     data_[size_] = '\0';                 // 重新封口
 }
+// ---- M3：移动构造（窃取缓冲区）----
+String::String(String&& other) noexcept
+    : data_(other.data_),          // 直接抢指针
+      size_(other.size_),
+      capacity_(other.capacity_) {
+    other.data_ = new char[1];     // 源对象变回"有效的空串"
+    other.data_[0] = '\0';
+    other.size_ = 0;
+    other.capacity_ = 0;
+}
+
+// ---- M3：移动赋值（释放自己的，窃取别人的）----
+String& String::operator=(String&& other) noexcept {
+    if (this == &other) {          // 自移动 s = std::move(s) 必须安全
+        return *this;
+    }
+    delete[] data_;                // 释放自己的旧缓冲区
+    data_ = other.data_;           // 窃取
+    size_ = other.size_;
+    capacity_ = other.capacity_;
+    other.data_ = new char[1];     // 源对象变空壳
+    other.data_[0] = '\0';
+    other.size_ = 0;
+    other.capacity_ = 0;
+    return *this;
+}
 
 
 // TODO: 在此实现 include/my_string.h 中声明的所有成员函数与运算符。
